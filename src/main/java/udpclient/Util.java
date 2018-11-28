@@ -178,7 +178,7 @@ public class Util {
         String hopsStr="";
         String[] filesStr={};
         try {
-            hopsStr = s.substring(lastQuotationIndex + 1, s.length()).trim();
+            hopsStr = s.substring(firstQuotationIndex -3,firstQuotationIndex).trim();
             filesStr = s.substring(firstQuotationIndex, lastQuotationIndex + 1).split("\"");
         }catch (StringIndexOutOfBoundsException e){
             print_ng("Error occurred while extracting hops and file name");
@@ -187,8 +187,9 @@ public class Util {
         for (String str:filesStr){
             fileList.add(str);
         }
-        fileList.remove("");
-        fileList.remove(" ");
+
+        fileList.removeAll(Collections.singleton(""));
+        fileList.removeAll(Collections.singleton(" "));
 
         HashMap<String, Object> map = new HashMap<String, Object>();
 
