@@ -31,7 +31,7 @@ public class UploadService {
 
         final boolean fileExist = Client.selectedFiles.contains(fileName);
 
-        print_ng("Uploader > "+" Got request"+"\tFile name: "+fileName+"\tfile exist: "+fileExist);
+        print_ng("Uploader > "+"Got request"+"\tFile name: "+fileName+"\t\tfile exist: "+fileExist);
 
         if (fileExist && fileName!=""){
                 return sendFile(fileName);
@@ -71,7 +71,7 @@ public class UploadService {
 
 
             int sizeInMb=length/(1024*1024);
-            print_ng("Uploader > "+"Uploading\t"+ "File name: " +fileName +"\tSize: "+sizeInMb+"MB");
+            print_ng("Uploader > "+"Uploading\t"+ "File name: " +fileName +"\t\tSize: "+sizeInMb+"MB");
             print_nng("Uploader > "+"Uploading "+"\tFile hash: " + hash);
 
             return ResponseEntity.ok()

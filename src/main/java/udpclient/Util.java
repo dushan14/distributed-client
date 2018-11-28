@@ -22,17 +22,32 @@ public class Util {
         ArrayList<String> foundFiles=new ArrayList<>();
 
         for (String fileName:selectedFiles){
-            for (String word:fileName.split(" ")){ //for space separated words in selected files
-                if (word.equalsIgnoreCase(searchName)){
-                    foundFiles.add(fileName);
-                    break;
+
+            int containSize=0;
+            String[] searchArray = searchName.split(" ");
+
+            for (String searchNamePart:searchArray) {
+                for (String word:fileName.split(" ")){ //for space separated words in selected files
+                    if (word.equalsIgnoreCase(searchNamePart)) {
+                        containSize++;
+                    }
                 }
             }
-            if (fileName.equalsIgnoreCase(searchName)){ //chek for hall file name in selected files
+            if (containSize==searchArray.length){
                 foundFiles.add(fileName);
-                break;
             }
+
+//            if (fileName.equalsIgnoreCase(searchName)){ //chek for hall file name in selected files
+//                foundFiles.add(fileName);
+//                break;
+//            }
         }
+
+        // remove duplicates
+        Set<String> set = new LinkedHashSet<>();
+        set.addAll(foundFiles);
+        foundFiles.clear();
+        foundFiles.addAll(set);
 
         return foundFiles;
     }

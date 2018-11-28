@@ -221,8 +221,11 @@ public class ReceivingMessageHandler {
                     filesStr=filesStr.substring(0, filesStr.length() - 2); //remove last comma and space
 
                     print_ng("Neighbour " + ip_file_owner + ":" + port_file_owner + " has : " + filesStr);
-                    print_nng("download http://" + ip_file_owner + ":" + port_file_owner + "/download?name=\"" + filesStr+"\"");
 
+                    for(String file:fileNames){
+//
+                        print_nng("download http://" + ip_file_owner + ":" + port_file_owner + "/download?name=\"" + file+"\"");
+                    }
                     //collect data until hops==1
 
                 }else {
