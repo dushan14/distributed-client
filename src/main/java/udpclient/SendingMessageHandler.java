@@ -2,10 +2,12 @@ package udpclient;
 
 import java.util.ArrayList;
 import java.util.Map.Entry;
+import java.util.Random;
 import java.util.StringTokenizer;
 
 import static udpclient.Client.*;
 import static udpclient.Printer.*;
+import static udpclient.Statistics.increaseOutgoingMsgCount;
 import static udpclient.Util.*;
 
 public class SendingMessageHandler {
@@ -132,7 +134,7 @@ public class SendingMessageHandler {
                     print_nng("Wrong hops value");
                 }
             }
-            searchFile(filename,hops);
+            searchFile(filename);
         }catch (Exception e){
             e.printStackTrace();
         }
@@ -142,12 +144,17 @@ public class SendingMessageHandler {
      *  command: search
      *
      * @param filename
-     * @param hops
      */
-    public static void searchFile(String filename,int hops){
+    public static void searchFile(String filename){
+
+        increaseOutgoingMsgCount();
+
         /* length SER IP port file_name hops */
-        String msg = "SER " + myIp + " " + myPort + " \"" + filename + "\" " + hops;
+        String msg = "SER " + myIp + " " + myPort + " \"" + filename + "\" " + 1;
         String msg_formatted = formatMessage(msg);
+
+        // set search starting time
+        timeOfLastSearch=System.currentTimeMillis();
 
         for (Entry<String, Node> entry : getRoutingTable().entrySet()) {
             sendPacket(entry.getValue().getIp(), entry.getValue().getPort(), msg_formatted, "Search");
@@ -166,10 +173,11 @@ public class SendingMessageHandler {
 
     }
 
+    private static Random random = new Random();
 
     public static void sendGossips() {
         if (getRoutingTable().size() > 1) {
-            if (rgStatus.hasRoutingTableIncreasedComparedToGossipStatus()) { //gossip only if routing table has added some nodes
+            if (okToGossip) {
 
                 rgStatus.setGossipSendingStatusToRoutingTableStatus();
 
@@ -180,20 +188,20 @@ public class SendingMessageHandler {
                 for (Node node : allNeighbours) {
                     String neighboursToBeSent = "";
                     int count = 0;
-                    for (Node n : allNeighbours) {
-                        if (!node.isEqual(n.getIp(), n.getPort())) {
-                            neighboursToBeSent += n.getIp() + " " + n.getPort() + " ";
-                            count++;
-                        } else {
-                            continue;
-                        }
+
+                    // random gossip
+                    int randomNum1=random.nextInt(allNeighbours.size()-0) + 0;
+                    while (allNeighbours.get(randomNum1).isEqual(node.getIp(),node.getPort())){
+                        randomNum1=random.nextInt(allNeighbours.size()-0) + 0;
                     }
+                    neighboursToBeSent += allNeighbours.get(randomNum1).getIp() + " " + allNeighbours.get(randomNum1).getPort() + " ";
+                    count++;
                     neighboursToBeSent.substring(0, neighboursToBeSent.length() - 1); //remove last space
+
 
                     sendNeighboursToNeighbourMessage(node, count, neighboursToBeSent);
 
                 }
-                print_n("");
             }
         }
     }

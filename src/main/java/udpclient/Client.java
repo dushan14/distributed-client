@@ -13,6 +13,8 @@ import static udpclient.Util.*;
 
 public class Client {
 
+    public static int MAX_HOPS_TO_FORWARD_SEARCH = 3;
+    public static int NODE_LIMIT = 5;
     public static int myPort=5556;
     public static String myIp;
     public static String myUserName;
@@ -30,6 +32,8 @@ public class Client {
 
     public static ArrayList<String> selectedFiles=new ArrayList<>();
 
+    public static long timeOfLastSearch=0; //this will be set for each search and use to calculate latency of search results.
+
     public static String filepath= "File Names.txt";
 
     public static boolean okToListen=false;
@@ -41,6 +45,7 @@ public class Client {
     private static Scanner scanner;
 
     public static Status rgStatus=new Status();
+    public static boolean okToGossip=false;
 
 
     public static void main(String[] args)  {
@@ -199,6 +204,9 @@ public class Client {
                     // messages from neighbours
                         case "JOINOK":
                             ReceivingMessageHandler.joinOk(st, incoming);
+                            if (!okToGossip){
+                                okToGossip=true;
+                            }
                             break;
 
                         case "LEAVEOK":
@@ -211,6 +219,9 @@ public class Client {
 
                         case "JOIN":
                             ReceivingMessageHandler.joiningOfNeighbour(st, incoming);
+                            if (!okToGossip){
+                                okToGossip=true;
+                            }
                             break;
 
                         case "LEAVE":
@@ -256,17 +267,35 @@ public class Client {
         timer.schedule(task,gossipThreadStartingDelay, gossipPeriod);
     }
 
+    private static Random random = new Random();
+
+
     public static void addToRoutingTable(Node node,String addedBy){
-        if (routingTable.containsKey(node.getKey())){
+        if (routingTable.containsKey(node.getKey())) {
             return;
-        }else {
-            routingTable.put(node.getKey(),node);
+        }
+
+        if (routingTable.size()<NODE_LIMIT) {
+            routingTable.put(node.getKey(), node);
             rgStatus.routingTableStatus_plus1();
-            print_nng("Routing table <-added "+node.getKey()+" by "+addedBy);
+            print_nng("Routing table <-added " + node.getKey() + " by " + addedBy);
+        }
+
+        // priority for join query
+        else if(addedBy.equals("Join request")){
+            // remove a random node from table and let join request the priority
+            // this will let last nodes to be spread in the network, otherwise they will be isolated
+            ArrayList<String> keys = new ArrayList<>(routingTable.keySet());
+            int randomNum1=random.nextInt(routingTable.size()-0) + 0;
+            removeFromRoutingTable(routingTable.get(keys.get(randomNum1)));
+
+            // add after removing a random node
+            addToRoutingTable(node,addedBy);
         }
     }
+
     public static void removeFromRoutingTable(Node node){
-        if (routingTable.containsKey(node.getKey()))    {
+        if (routingTable.containsKey(node.getKey())) {
             routingTable.remove(node.getKey());
             print_nng("Routing table ->remove "+node.getKey());
         }
@@ -275,5 +304,16 @@ public class Client {
     public static HashMap<String, Node> getRoutingTable(){
         return routingTable;
     }
+
+    public static void setMaxHops(int hops) {
+        MAX_HOPS_TO_FORWARD_SEARCH =hops;
+        print_nng("Maximum forwarding hops: "+ MAX_HOPS_TO_FORWARD_SEARCH);
+    }
+
+    public static void setNodeLimit(int nodeLimit) {
+        NODE_LIMIT =nodeLimit;
+        print_nng("Maximum nodes in routing table: "+ NODE_LIMIT);
+    }
+
 
 }

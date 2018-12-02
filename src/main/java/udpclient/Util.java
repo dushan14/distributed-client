@@ -216,6 +216,12 @@ public class Util {
         sb.append("\t  ____\n\n");
         sb.append("\t").append("help").append("\t\t\t\t\t - ").append("app commands (this)").append("\n");
         sb.append("\t").append("setport port").append("\t\t\t\t - ").append("change port if registration failed").append("\n");
+        sb.append("\t").append("setnodelimit nodes").append("\t\t\t - ").append("set maximum nodes limit in routing table").append("\n");
+        sb.append("\t").append("nodelimit").append("\t\t\t\t - ").append("show maximum nodes limit").append("\n");
+        sb.append("\t").append("sethops hops").append("\t\t\t\t - ").append("set maximum hops count").append("\n");
+        sb.append("\t").append("hops").append("\t\t\t\t\t - ").append("show maximum hops count").append("\n");
+        sb.append("\t").append("stat").append("\t\t\t\t\t - ").append("show counts of queries").append("\n");
+        sb.append("\t").append("clearstat").append("\t\t\t\t - ").append("set counts of queries to 0").append("\n");
         return sb.toString();
     }
 

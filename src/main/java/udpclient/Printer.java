@@ -3,9 +3,11 @@ package udpclient;
 
 
 import java.net.DatagramPacket;
+import java.util.Arrays;
 import java.util.Map;
 
 import static udpclient.Client.*;
+import static udpclient.Statistics.*;
 
 public class Printer {
 
@@ -20,6 +22,8 @@ public class Printer {
     private static String bold="\033[0;1m";
 
     private static String OS = System.getProperty("os.name").toLowerCase();
+
+    public static String[] printFilterTypes=new String[] {"GOSSIP","SEROK","SER"};
 
     public static boolean isWindows() {
         return (OS.indexOf("win") >= 0);
@@ -68,29 +72,46 @@ public class Printer {
         print_n("");
     }
 
+
+
+
     public static void print_Receiving(String msg, DatagramPacket incoming) {
-        String ip=incoming.getAddress().getHostAddress();
-        int port=incoming.getPort();
-        String sender=ip+":"+port;
 
-        String bs="";
-        if (ip.equals(bs_ip) && port==bs_port){
-            bs=" [BS] ";
-        }
-        print_n( colorText(" <= ",boldYellow)+colorText(msg,boldYellow)+colorText(" from "+sender+bs, generalColor));
-    }
+        String[] split = msg.split(" ");
+        String msgType=split[1];
+        boolean containsInFilter = Arrays.stream(printFilterTypes).anyMatch(msgType::equals);
 
-    public static void print_Sending(String ip, int port, String msg,String commandType) {
-        String sender=ip+":"+port;
-        String bs="";
-        if (bs_ip!=null){
+        if(!containsInFilter) {
+            String ip=incoming.getAddress().getHostAddress();
+            int port=incoming.getPort();
+            String sender=ip+":"+port;
+
+            String bs="";
             if (ip.equals(bs_ip) && port==bs_port){
                 bs=" [BS] ";
             }
+            print_n(colorText(" <= ", boldYellow) + colorText(msg, boldYellow) + colorText(" from " + sender + bs, generalColor));
         }
-        print_n( colorText(" => ",boldBlue) +colorText(msg,boldBlue)+colorText(" to "+sender+bs+ colorText(" ["+ commandType+" command]",bold), generalColor) );
     }
 
+    public static void print_Sending(String ip, int port, String msg,String commandType) {
+
+        String[] split = msg.split(" ");
+        String msgType = split[1];
+        boolean containsInFilter = Arrays.stream(printFilterTypes).anyMatch(msgType::equals);
+
+        if (!containsInFilter) {
+            String sender = ip + ":" + port;
+            String bs = "";
+            if (bs_ip != null) {
+                if (ip.equals(bs_ip) && port == bs_port) {
+                    bs = " [BS] ";
+                }
+            }
+            print_n(colorText(" => ", boldBlue) + colorText(msg, boldBlue) + colorText(" to " + sender + bs + colorText(" [" + commandType + " command]", bold), generalColor));
+
+        }
+    }
 
     public static void print_Success(String msg){
         String msg_=colorText("Success: ",boldGreen)+colorText(msg, generalColor);
@@ -134,6 +155,21 @@ public class Printer {
         print_n("");
     }
 
+    public static void printMaxHops(){
+        print_nng("Maximum forwarding hops: "+ MAX_HOPS_TO_FORWARD_SEARCH);
+    }
+
+
+    public static void printQueryCount() {
+        print_n("Outgoing queries: "+ getOutgoingMsgCount());
+        print_n("Income queries: "+ getIncomeMsgCount());
+        print_n("Forwarded queries: "+ getForwardedMsgCount());
+        print_n("Answered queries: "+ getAnsweredMsgCount());
+    }
+
+    public static void printMaxNodes(){
+        print_nng("Maximum nodes in routing table: "+ NODE_LIMIT);
+    }
 
     public static void printName(){
         StringBuffer buf = new StringBuffer();

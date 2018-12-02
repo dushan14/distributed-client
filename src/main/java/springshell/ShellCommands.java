@@ -7,10 +7,12 @@ import org.springframework.shell.standard.ShellMethod;
 import org.springframework.shell.standard.ShellOption;
 import org.springframework.shell.standard.commands.Help;
 import org.springframework.shell.standard.commands.Quit;
+import udpclient.Client;
 import udpclient.SendingMessageHandler;
 
 import static udpclient.Printer.*;
 import static udpclient.SendingMessageHandler.sendGossipRequest;
+import static udpclient.Statistics.clearCounts;
 import static udpclient.Util.changeMyPort;
 import static udpclient.Util.getHelpText;
 
@@ -48,14 +50,43 @@ public class ShellCommands implements Quit.Command, Help.Command {
     }
 
     @ShellMethod(key = "search",value = "[search file_name hops(optional)] search files in network by name")
-    public void search(@ShellOption("--name") String name,@ShellOption(value = "--hops" ,defaultValue="1") String hopsStr ){
-        int hops=Integer.parseInt(hopsStr);
-        SendingMessageHandler.searchFile(name,hops);
+    public void search(@ShellOption("--name") String name){
+        SendingMessageHandler.searchFile(name);
     }
 
     @ShellMethod(key = "files", value = "show selected files")
     public void files(){
         printSelectedFiles();
+    }
+
+    @ShellMethod(key = "setnodelimit", value = "set maximum nodes limit in routing table")
+    public void setMaxNodes(@ShellOption(value = "--nodes") int nodeLimit){
+        Client.setNodeLimit(nodeLimit);
+    }
+
+    @ShellMethod(key = "nodelimit", value = "show maximum nodes limit")
+    public void showMaxNodes(){
+        printMaxNodes();
+    }
+
+    @ShellMethod(key = "sethops", value = "set maximum hops count")
+    public void setMaxHops(@ShellOption(value = "--hops") int hops){
+        Client.setMaxHops(hops);
+    }
+
+    @ShellMethod(key = "hops", value = "show maximum hops count")
+    public void showHops(){
+        printMaxHops();
+    }
+
+    @ShellMethod(key = "stat", value = "show counts of queries")
+    public void showQueryCount(){
+        printQueryCount();
+    }
+
+    @ShellMethod(key = "clearstat", value = "set counts of queries to 0")
+    public void clearQueryCount(){
+        clearCounts();
     }
 
     @ShellMethod(key = "help", value = "app commands (this)")

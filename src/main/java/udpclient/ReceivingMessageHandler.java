@@ -10,6 +10,9 @@ import static springboot.SpringBootWithShellApplication.tomcatPort;
 import static udpclient.Client.*;
 import static udpclient.Printer.*;
 import static udpclient.SendingMessageHandler.sendNeighboursToNeighbourMessage;
+import static udpclient.Statistics.increaseAnsweredMsgCount;
+import static udpclient.Statistics.increaseForwardedMsgCount;
+import static udpclient.Statistics.increaseIncomeMsgCount;
 import static udpclient.Util.*;
 
 public class ReceivingMessageHandler {
@@ -31,6 +34,10 @@ public class ReceivingMessageHandler {
                 Node neighbour= new Node(st.nextToken(),st.nextToken(),"");
 
                 addToRoutingTable(neighbour,"BS Response");
+
+                // join to neighbours after regok
+                SendingMessageHandler.joinToSystem();
+
                 break;
 
             case 2:
@@ -41,6 +48,9 @@ public class ReceivingMessageHandler {
 
                 Node neighbour2= new Node(st.nextToken(),st.nextToken(),"");
                 addToRoutingTable(neighbour2,"Bootstrap Server Response");
+
+                // join to neighbours after regok
+                SendingMessageHandler.joinToSystem();
                 break;
 
             case 9999:
@@ -196,10 +206,12 @@ public class ReceivingMessageHandler {
         int port_file_owner= Integer.parseInt(st.nextToken());
         int hops= Integer.parseInt(st.nextToken());
 
+        long searchTimeDifference = System.currentTimeMillis() - timeOfLastSearch;
+
         switch (no_of_files) {
             case 0:
-                print_Success("Searching");
-                print_nng("No matching result");
+//                print_Success("Searching");
+//                print_nng("No matching result");
                 break;
             case 9999:
                 print_Error_n("Code-"+no_of_files+":  Failure due to node unreachable");
@@ -222,6 +234,11 @@ public class ReceivingMessageHandler {
 
                     print_ng("Neighbour " + ip_file_owner + ":" + port_file_owner + " has : " + filesStr);
 
+                    print_ng("Delay: "+searchTimeDifference+" ms");
+
+                    print_ng("Hops count: "+getHopsCountFromSearchOk(msg));
+
+
                     for(String file:fileNames){
 //
                         print_nng("download http://" + ip_file_owner + ":" + port_file_owner + "/download?name=\"" + file+"\"");
@@ -229,12 +246,24 @@ public class ReceivingMessageHandler {
                     //collect data until hops==1
 
                 }else {
-                    print_nng("No a valid number of files "+no_of_files);
+                    print_nng("Not a valid number of files "+no_of_files);
                 }
         }
     }
 
+    private static String getHopsCountFromSearchOk(String msg) {
+        String [] split = msg.split(" ");
+        if (split.length>4){
+            return split[5];
+        }
+        else {
+            return "";
+        }
+    }
+
     public static void searchFileForNeighbour(StringTokenizer st, DatagramPacket incoming, String incomeMessage) {
+
+        increaseIncomeMsgCount();
 
         String ip_file_needed=st.nextToken();
         int port_file_needed= Integer.parseInt(st.nextToken());
@@ -266,29 +295,44 @@ public class ReceivingMessageHandler {
 
         print_nng("File data sent to "+ip_file_needed+":"+port_file_needed);
 
+
+        if(foundFiles.size()>0){
+            increaseAnsweredMsgCount();
+        }
+
+
         /*
         Manage hops
          */
-        if (hops>1){
-            hops=hops-1;
-            String hopsMsg="SER " + ip_file_needed + " " + port_file_needed + " \"" + searchName + "\" " + hops;
-            String msg_formattedForHops = formatMessage(hopsMsg);
 
-            int forwardedHops=0;
-            for (Map.Entry<String, Node> entry : getRoutingTable().entrySet()) {
+        // if not found any result forward to hops
+        if (foundFiles.size()==0) {
+            if (hops < MAX_HOPS_TO_FORWARD_SEARCH) {
 
-                if (!entry.getValue().isEqual(ip_file_needed,port_file_needed)){
-                    sendPacket(entry.getValue().getIp(), entry.getValue().getPort(), msg_formattedForHops, "Search in hops");
-                    print_ng("File search forwarded to "+ entry.getValue().getKey()+". more hops: "+hops);
-                    forwardedHops++;
+
+                hops = hops + 1;
+                String hopsMsg = "SER " + ip_file_needed + " " + port_file_needed + " \"" + searchName + "\" " + hops;
+                String msg_formattedForHops = formatMessage(hopsMsg);
+
+                int forwardedHops = 0;
+                for (Map.Entry<String, Node> entry : getRoutingTable().entrySet()) {
+
+                    if (!entry.getValue().isEqual(ip_file_needed, port_file_needed)) {
+                        sendPacket(entry.getValue().getIp(), entry.getValue().getPort(), msg_formattedForHops, "Search in hops");
+                        print_ng("File search forwarded to " + entry.getValue().getKey() + ". more hops: " + hops);
+                        forwardedHops++;
+                    }
                 }
-            }
-            if (forwardedHops==0){
-                print_nng("No other neighbours to forward this search");
-            }
+                if (forwardedHops == 0) {
+                    print_nng("No other neighbours to forward this search");
+                }else {
+                    increaseForwardedMsgCount();
+                }
 
+            }else if(hops== MAX_HOPS_TO_FORWARD_SEARCH){
+                print_nng("Search message forwarding finished here. (maximum hop count)");
+            }
         }
-        print_n("");
 
     }
 
@@ -315,7 +359,6 @@ public class ReceivingMessageHandler {
             }
 
         }
-        print_n("");
 
     }
 

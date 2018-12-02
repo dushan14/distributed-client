@@ -36,9 +36,16 @@ public class Downloader {
 
 
             URL url = new URL(urlEncodedName);
+
+            long startingTime= System.currentTimeMillis();
+
             HttpURLConnection httpConn = (HttpURLConnection) url.openConnection();
             httpConn.setConnectTimeout(TIMEOUT);
             int responseCode = httpConn.getResponseCode();
+
+            long endTime= System.currentTimeMillis();
+
+            long timeDifference= endTime - startingTime;
 
             if (responseCode == HttpURLConnection.HTTP_OK) {
                 String fileName = "";
@@ -77,11 +84,13 @@ public class Downloader {
                 int sizeInMb=contentLength/(1024*1024);
 
                 print_ng("Downloader > "+"Downloaded\t"+ "File name: " +fileName +"\tSize: "+sizeInMb+"MB");
+                print_ng("Delay: "+timeDifference+" ms");
 
                 String hash = getHash(new File(saveFilePath));
 
                 print_ng("Downloader > " + "Calculated hash: \t" +hash);
                 print_nng("Downloader > " + "Server sent hash: \t" +hashSentByServer);
+
 
 
             } else {
