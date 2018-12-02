@@ -31,3 +31,10 @@ java -jar target/dsapp.jar
 | `exit`                           | exit from application followed by 'unreg' and 'leave' |    |
 | `help`                           | show application commands           |                      |
 | `setport port`                   | hange port if registration failed   | `setport 5656`       |
+| `setnodelimit nodes`             | set maximum nodes limit in routing table | `setnodelimit 5`|
+| `nodelimit`                      | show maximum nodes limit            |                      |
+| `sethops hops`                   | set maximum hops count              | `sethops 3`          |
+| `hops`                           | show maximum hops count             |                      |
+| `stat`                           | show counts of queries              |                      |
+| `clearstat`                      | set counts of queries to 0          |                      |
+
